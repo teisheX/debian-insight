@@ -129,3 +129,29 @@
   50% { opacity: 1; }
 }
 .pulse-dot { animation: pulse-glow 2s ease-in-out infinite; }
+
+/* ============ PRINT / PDF EXPORT ============ */
+.print-page {
+  width: 1920px;
+  height: 1080px;
+  position: relative;
+  overflow: hidden;
+  page-break-after: always;
+  break-after: page;
+}
+.print-page:last-child { page-break-after: auto; break-after: auto; }
+
+@media print {
+  @page { size: 1920px 1080px; margin: 0; }
+  html, body {
+    background: var(--navy-deep) !important;
+    overflow: visible !important;
+    width: 1920px;
+    height: auto;
+  }
+  body * { visibility: hidden; }
+  .print-root, .print-root * { visibility: visible; }
+  .print-root { position: absolute; left: 0; top: 0; }
+  .no-print { display: none !important; }
+  .pulse-dot { animation: none !important; }
+}
