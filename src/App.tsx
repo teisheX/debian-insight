@@ -1,30 +1,15 @@
-import { createFileRoute, useSearch } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight, Maximize2, LayoutGrid, X, StickyNote, FileDown } from "lucide-react";
 import { slides } from "@/components/slides/slides";
 import { useKeyboardNav } from "@/components/slides/ScaledSlide";
 
-export const Route = createFileRoute("/")({
-  validateSearch: (s: Record<string, unknown>) => ({ print: s.print === "1" || s.print === true ? true : false }),
-  head: () => ({
-    meta: [
-      { title: "TCC · Plataforma de Observabilidade com IA" },
-      { name: "description", content: "Defesa de TCC: plataforma web de observabilidade para VPS Debian com apoio de Inteligência Artificial." },
-      { property: "og:title", content: "TCC · Plataforma de Observabilidade com IA" },
-      { property: "og:description", content: "DevOps, SRE e IA aplicados ao monitoramento de serviços em VPS Debian." },
-    ],
-  }),
-  component: Root,
-});
-
-function Root() {
-  const { print } = useSearch({ from: "/" });
+export default function App() {
+  const print = new URLSearchParams(window.location.search).get("print") === "1";
   return print ? <PrintMode /> : <Presentation />;
 }
 
 function PrintMode() {
   useEffect(() => {
-    // Wait a tick for fonts/layout to settle, then open the print dialog.
     const t = setTimeout(() => window.print(), 800);
     return () => clearTimeout(t);
   }, []);
@@ -38,7 +23,7 @@ function PrintMode() {
         <button onClick={() => window.print()} className="ml-2 px-3 py-1.5 rounded-lg bg-cyan/15 border border-cyan/40 text-cyan text-sm hover:bg-cyan/25 transition">
           Reabrir
         </button>
-        <a href="/" className="px-3 py-1.5 rounded-lg border border-cyan/20 text-sm hover:bg-cyan/10 transition">Voltar</a>
+        <a href={import.meta.env.BASE_URL} className="px-3 py-1.5 rounded-lg border border-cyan/20 text-sm hover:bg-cyan/10 transition">Voltar</a>
       </div>
       {slides.map((s, i) => {
         const C = s.component;
@@ -57,6 +42,7 @@ function Presentation() {
   const [grid, setGrid] = useState(false);
   const [notes, setNotes] = useState(false);
   const total = slides.length;
+  const printHref = `${import.meta.env.BASE_URL}?print=1`;
 
   const next = useCallback(() => setIndex((i) => Math.min(total - 1, i + 1)), [total]);
   const prev = useCallback(() => setIndex((i) => Math.max(0, i - 1)), []);
@@ -68,12 +54,12 @@ function Presentation() {
       if (e.key === "g" || e.key === "G") setGrid((g) => !g);
       else if (e.key === "n" || e.key === "N") setNotes((n) => !n);
       else if (e.key === "f" || e.key === "F") document.documentElement.requestFullscreen?.();
-      else if (e.key === "p" || e.key === "P") window.open("/?print=1", "_blank");
-      else if (e.key === "Escape") { setGrid(false); }
+      else if (e.key === "p" || e.key === "P") window.open(printHref, "_blank");
+      else if (e.key === "Escape") setGrid(false);
     };
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
-  }, []);
+  }, [printHref]);
 
   useEffect(() => {
     document.title = `${index + 1}/${total} · TCC · Observabilidade com IA`;
@@ -90,7 +76,7 @@ function Presentation() {
             <h1 className="text-3xl font-display font-bold gradient-text">12 slides · TCC</h1>
           </div>
           <div className="flex items-center gap-2">
-            <a href="/?print=1" target="_blank" rel="noreferrer" className="glass px-5 py-3 flex items-center gap-2 hover:glow-cyan transition">
+            <a href={printHref} target="_blank" rel="noreferrer" className="glass px-5 py-3 flex items-center gap-2 hover:glow-cyan transition">
               <FileDown className="w-5 h-5 text-cyan" /> Exportar PDF
             </a>
             <button onClick={() => setGrid(false)} className="glass px-5 py-3 flex items-center gap-2 hover:glow-cyan transition">
@@ -124,7 +110,6 @@ function Presentation() {
 
   return (
     <div className="fixed inset-0 flex flex-col">
-      {/* Top bar */}
       <header className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-6 py-4 pointer-events-none">
         <div className="flex items-center gap-3 pointer-events-auto">
           <div className="glass px-4 py-2 flex items-center gap-3">
@@ -133,13 +118,7 @@ function Presentation() {
           </div>
         </div>
         <div className="flex items-center gap-2 pointer-events-auto">
-          <a
-            href="/?print=1"
-            target="_blank"
-            rel="noreferrer"
-            className="glass px-4 py-3 flex items-center gap-2 hover:glow-cyan transition"
-            title="Exportar para PDF (P)"
-          >
+          <a href={printHref} target="_blank" rel="noreferrer" className="glass px-4 py-3 flex items-center gap-2 hover:glow-cyan transition" title="Exportar para PDF (P)">
             <FileDown className="w-5 h-5 text-cyan" />
             <span className="text-sm font-medium">Exportar PDF</span>
           </a>
@@ -155,12 +134,10 @@ function Presentation() {
         </div>
       </header>
 
-      {/* Slide canvas */}
       <main className="flex-1 relative">
         <Current />
       </main>
 
-      {/* Bottom nav */}
       <footer className="absolute bottom-0 left-0 right-0 z-20 flex items-center justify-center gap-4 px-6 py-5 pointer-events-none">
         <div className="glass px-3 py-2 flex items-center gap-2 pointer-events-auto">
           <button onClick={prev} disabled={index === 0} className="p-2 rounded-lg hover:bg-cyan/10 disabled:opacity-30 transition">
@@ -184,7 +161,6 @@ function Presentation() {
         </div>
       </footer>
 
-      {/* Speaker notes */}
       {notes && (
         <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-30 max-w-3xl w-[90%] glass p-6 glow-purple pointer-events-auto">
           <div className="flex items-center justify-between mb-3">
